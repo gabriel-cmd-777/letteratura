@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Letteratura italiana — quiz di ripasso</title>
+<style>
+:root {
+  --ink: #1c1c1a;
+  --paper: #faf9f6;
+  --rule: #d8d5cc;
+  --mark: #7a1f1f;
+  --muted: #8a8578;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Iowan Old Style', Georgia, serif;
+  display: flex;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 48px);
+}
+.mono { font-family: 'Courier New', monospace; }
+#app { width: 100%; max-width: 640px; }
+header {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 12px;
+  margin-bottom: 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+h1 { font-size: 20px; font-weight: 600; margin: 2px 0 0; }
+.meta { font-size: 13px; color: var(--muted); text-align: right; }
+.save-error {
+  font-size: 12px;
+  color: var(--mark);
+  margin-bottom: 16px;
+}
+.qmeta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+.qtext { font-size: 19px; line-height: 1.4; margin-bottom: 22px; font-weight: 500; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.opt {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  background: transparent;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 15.5px;
+  line-height: 1.4;
+  color: var(--ink);
+  width: 100%;
+}
+.opt .glyph { font-family: 'Courier New', monospace; font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.opt.correct { border-color: #3f6b3f; background: #eef3ea; }
+.opt.wrong { border-color: var(--mark); background: #f5e9e9; }
+.opt[disabled] { cursor: default; }
+.footer-row {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.status { font-size: 13px; }
+.status.ok { color: #3f6b3f; }
+.status.bad { color: var(--mark); }
+.btn {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  padding: 9px 18px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.center { text-align: center; padding: 48px 0; }
+.center .label { font-size: 15px; color: var(--muted); margin-bottom: 8px; }
+.center .big { font-size: 22px; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ---------------------------------------------------------------------------
+// Dati: 240 domande chiuse dal paniere "Letteratura italiana" — Corso di
+// formazione di secondo livello in Letteratura, docente Di Veroli Anna.
+// Versione basata sul PDF corretto (paniere_modificato_lett_it).
+// ---------------------------------------------------------------------------
+const RAW = [
+  ["002","Da cosa deriva la lingua italiana?",["dalla lingua latina letteraria","dalle lingue romanze","dal volgare","dalla lingua d'oc"],2],
+  ["002","Se pareba boves...a quale composizione appartengono questi versi?",["ritmo laurenziano","indovinello veronese","placito di Sessa","placito di Capua"],1],
+  ["002","A quale anno risale la Formula di testimonianza cassinese?",["910","960","845","1010"],1],
+  ["002","In che periodo è possibile rintracciare le prime testimonianze scritte della letteratura in volgare?",["prima metà del XIII secolo","inizio XII secolo","fine XII secolo","seconda metà del XIII secolo"],0],
+  ["003","Quale tra i seguenti non fu un centro di produzione culturale agli inizi della diffusione del volgare?",["accademia","università","corte","monastero"],0],
+  ["004","In quale opera Dante riflette sul volgare?",["Vita Nova","Convivio","De Vulgarii Eloquentia","Divina Commedia"],2],
+  ["004","Chi ha scritto il Questio de Acqua et terra?",["Galilei","Sordello da Goito","Guido Cavalcanti","Dante"],3],
+  ["005","È col regno di chi che in Sicilia viene a crearsi una grande corte?",["Federico II","Enrico III","Federico I","Carlo V"],0],
+  ["005","Che cosa sono i lai ?",["novelle di tema amoroso","forme poetiche medievali articolate in stanze tutte diverse","novelle ritmate di natura giocosa","produzioni ispirate alla satira"],1],
+  ["005","I \"volgarizzamenti\" sono le traduzioni dal \"volgare\":",["Dal Trecento al Quattrocento","Dal Cento al Duecento","Dal Cento al Trecento","Dal Duecento al Quattrocento"],3],
+  ["006","Guittone d'Arezzo è:",["un versificatore aristocratico","un semplice poeta","un innovatore tecnico","un amante della tradizione"],2],
+  ["006","Chi era il maestro di Dante?",["Guido Guinizelli","Guido Cavalcanti","Brunetto Latini","Guittone d'Arezzo"],2],
+  ["006","In chi trova origine il sonetto?",["nei poeti siciliani","in Pietro l'Aretino","in Guido Guinizelli","in Guittone d'Arezzo"],0],
+  ["006","Da cosa funge la Magna Curia?",["filtro dalla poetica siciliana al dolce stil novo","filtro dalla lirica provenzale in Toscana","filtro dalla lirica latina al volgare","filtro dalla lirica provenzale in Lombardia"],1],
+  ["007","Cos'è particolarmente sviluppato in Guinizelli?",["le similitudini sviluppate","le metonimie esasperate","le metafore ardite","le rime baciate"],0],
+  ["007","Com'è l'amore per Cavalcanti?",["profonda gioia","angelicato","sentimento razionalizzato","passione irrazionale"],3],
+  ["007","Dove è situato il tema dell'ineffabilità dell'amore in Cavalcanti?",["alla fine del componimento","a metà del componimento","non è presente","all'inizio del componimento"],3],
+  ["008","In quale opera è registrata la Canzone del basilico?",["Decameron","Divina Commedia","Canzoniere","Memoriali bolognesi"],0],
+  ["008","Cecco Angiolieri di cosa è prototipo?",["stilnovismo","anti-stilnovismo","mediazione culturale con la scuola siciliana","traduzioni in volgare"],1],
+  ["008","Chi è l'autore di Rosa fresca aulentissima?",["Guido delle Colonne","Cielo d'Alcamo","Jacopo da Lentini","Pier della Vigna"],1],
+  ["009","Che cos'è il Novellino?",["Un manuale duecentesco sull'amore per neofiti","una raccolta di brevi novelle","una raccolta di novelle del '300","una raccolta di versi"],1],
+  ["009","La struttura della novella deriva dai fabliaux. Di cosa si tratta?",["descrizioni di battaglie","narrazioni di natura agiografica","racconti di svago","dialoghi filosofici"],2],
+  ["010","In che anno nasce a Firenze Dante?",["1267","1265","1301","1250"],1],
+  ["010","A chi è dedicata Vita Nova?",["Beatrice","Guido Cavalcanti","Brunetto Latini","Guido Guinizelli"],1],
+  ["010","La riflessione di Dante in Vita Nova riguarda…",["la volontà di dimenticare Beatrice","l'auspicio di un rinnovamento di Impero e papato","il passato","Il desiderio di iniziare una nuova vita"],2],
+  ["011","Come giustifica Dante l'uso del volgare nel Convivio?",["con una sopravvenuta disaffezione nei confronti del latino","per raggiungere tutti","col desiderio di stupire gli uomini di cultura","per schierarsi nella querelle tra latino e volgare"],1],
+  ["011","In quale opera Dante riflette sul suo percorso stilistico?",["Vita Nova","Convivio","Rime","De Vulgari Eloquentia"],3],
+  ["011","In quale gruppo delle liriche dantesche si è in presenza di un poetare aspro e oscuro?",["canzoni dottrinali e allegoriche","rime petrose","tenzone con Farese Donati","rime giovanili"],1],
+  ["012","Come è rappresentato nella Commedia il Purgatorio?",["un'immensa montagna","un infinito prato","una lunghissima scalinata","una immensa voragine"],0],
+  ["012","Quale numero ricorre nella Commedia?",["sei","cinque","quattro","tre"],3],
+  ["012","Nel Paradiso Dante contempla i nove cieli concentrici. In quale opera aveva già espresso il suo concetto al riguardo?",["Convivio","Vita Nova","Monarchia","Rime"],0],
+  ["012","Quali sono i due valori della Commedia?",["politico e sociale","storico e artistico","artistico e politico","letterale e allegorico"],3],
+  ["013","Quale tra questi è uno dei presupposti da cui prende vita la Commedia?",["ottenere successo","sollevare l'Italia dalla sua condizione","gettare luce sulla vera natura di alcuni personaggi","vendetta per il subìto esilio"],1],
+  ["014","Cosa funge da sfondo al Decameron?",["la discesa in Italia dell'Imperatore","la guerra tra fiorentini e senesi","la morte del papa","la peste del 1348"],3],
+  ["014","Qual è l'origine della materia che compone il Filocolo?",["della lirica provenzale","della tradizione còlta","della tradizione latina","quella popolare"],3],
+  ["015","Nel Proemio del Decameron che tipo di visione della letteratura propone l'autore?",["consolatoria","didattica","ingannatrice","affaticante"],0],
+  ["016","Qual è il significato della parola decameron?",["dieci giornate","dieci narratori","dieci racconti","dieci stanze"],0],
+  ["016","Quale simbologia pare celarsi dietro il numero dei narratori nel Decameron?",["i colli di Roma + la trinità","il numero delle note + la trinità","virtù teologali, cardinali + la trinità","i sette re di Roma + la trinità"],2],
+  ["016","Quali sono i due elementi che rivestono un ruolo centrale nella cosmologia di Boccaccio?",["forza e astuzia","fortuna e natura","divinità e potere","sagacia e ferocia"],1],
+  ["016","Qual è l'ultima opera che Boccaccio scrive prima di dedicarsi al Decameron?",["Filocolo","Filostrato","Ninfale fiesolano","Ninfale d'Ameto"],2],
+  ["017","Perché sono interessanti i problemi cronologici relativi al Canzoniere?",["per problemi di datazione","per poter svelare dei segreti del Petrarca","Perché la raccolta pare strutturata sulla cronologia dell'amore per Laura","per problemi filologici"],2],
+  ["017","Successivamente alla peste del 1348, cosa accadde a Petrarca?",["mutamento nello stile","ripensamento e ridefinizione","nulla","alterazione dello stato d'animo"],1],
+  ["017","Fin quando Petrarca divulgò i suoi componimenti in maniera occasionale?",["1350-53","1348-49","1346-47","1339-42"],1],
+  ["017","Qual era il titolo originario del Canzoniere petrarchesco?",["Rerum Vulgarium Fragmenta","O Fortuna","Ecce Gratum","Myricae"],0],
+  ["017","Nel Canzoniere la distinzione fra rime in vita e rime in morte...",["venne introdotta nella 2ª edizione","non è presente","fu introdotta dallo stesso Petrarca","fu introdotta dai lettori nel corso del tempo"],3],
+  ["017","Cosa rappresenta Laura per il Petrarca?",["un intero sistema ideologico","la negazione dell'intelletto","un semplice amore","una idealizzazione inesistente nella realtà"],0],
+  ["017","Che cos'è il Canzoniere? Segnare la risposta errata",["la ricostruzione di una vicenda biografica e","una miscellanea arbitraria postuma","una raccolta di versi","un insieme di liriche il cui tema base è di tipo amoroso"],1],
+  ["018","Nel Canzoniere, da un punto di vista retorico, cosa abbonda?",["antitesi e ossimoro","anafora e sineddoche","metonimia e anacoluto","omoteléuto e allegoria"],0],
+  ["018","In quante parti può essere diviso il Canzoniere?",["in due parti","non può essere diviso","in tre parti","in quattro parti"],0],
+  ["019","Il teatro che conosciamo, quando si sviluppo?",["nel '500","nel '400","nel '300","nel '600"],0],
+  ["019","Quali furono i due ordini monastici dei predicatori?",["certosini e antoniani","francescani e domenicani","carmelitani e cistercensi","agostiniani e camaldolesi"],1],
+  ["019","Quando avviene il passaggio dal sermone patristico-monastico a quello della modernità?",["tra XII e XIII secolo","tra XI e XII secolo","tra X e XI secolo","tra XIII e XIV secolo"],0],
+  ["019","Quale filosofia domina il Medioevo?",["socratismo","epicureismo","esistenzialismo","scolastica"],3],
+  ["019","Come possiamo definire il XIV secolo?",["un periodo di libertinaggio","un periodo di travagli spirituali","un periodo di aspre lotte","un periodo di oscurantismo"],1],
+  ["020","Chi tra i seguenti non è uno storiografo del Trecento?",["Giovanni Villani","Dino Compagni","Albertino Mussato","Bartolomeo Fiadori"],3],
+  ["022","Da cosa deriva il termine \"Umanesimo\"?",["humanae tumbir","humanae litterae","humanae species","humanae vitae"],1],
+  ["022","Su cosa si fonda la nuova civiltà che sorge con l'Umanesimo?",["tabula rasa del passato","ricerca di novità","esaltazione del Medioevo","rifacimento dei classici"],3],
+  ["023","Con l'Umanesimo come cambiò la condizione femminile",["peggiorò ulteriormente","non cambiò affatto","ebbe delle radicali modifiche","fece segnare dei timidi segnali di progresso."],3],
+  ["023","Quali furono i generi letterari caratteristici delle donne del '400?",["epistole letterarie e orazioni","motti ed epistole","lettere e liriche","liriche e testi teatrali"],0],
+  ["024","Cosa si intende per \"Mecenatismo\"?",["un genere letterario","un ordine monastico","protezione e beneficio per gli artisti","la tendenza ad allontanare gli artisti dalle corti"],2],
+  ["025","Chi fu il principale sostenitore della diglossia?",["Leon Battista Alberti","Poggio Bracciolini","Iacopo Sanazzaro","Leonardo Bruni"],3],
+  ["025","Cosa derivava dallo scrivere in volgare?",["non si incappava nella censura","ci si rivolgeva a un pubblico più ampio","c'era più scelta di generi","era piu semplice che scrivere in latino"],1],
+  ["025","Quale genere fu assai diffuso nel '400?",["la novella","il trattato","la beffa","l'exemplum"],0],
+  ["026","A quali fonti si ispirò il Sanazzaro?",["greco-latine","franco-provenzali","latine","volgari"],0],
+  ["026","Oltre a essere un modello di società, l'Arcadia del Sanazzaro cos'altro è tra le seguenti risposte?",["una metafora che allude a una comunità di letterati","un'allegoria della corte aragonese","un esempio di scrittura criptica","una metonimia riferita alla situazione politica italiana."],0],
+  ["026","Cosa accomunò la maggior parte dei poeti del '400?",["l'imitazione del Petrarca","l'uso del prosimetro","l'imitazione di Dante","l'adozione del verso libero"],0],
+  ["027","Chi era il \"Magnifico\"?",["Cosimo de' Medici","Marsilio Ficino","Poliziano","Lorenzo de' Medici"],3],
+  ["027","Chi scrisse le Stanze per la giostra di Giuliano?",["Lorenzo de' Medici","Cosimo de' Medici","il Poliziano","Luigi Pulci"],2],
+  ["028","Quale fu il soggetto preferito dai cantari del '300?",["la materia merovingia","i temi popolari","i classici latini","la materia carolingia"],3],
+  ["028","Chi è l'autore del Morgante?",["l'Aretino","il Poliziano","Luigi Pulci","Lorenzo de' Medici"],2],
+  ["028","Cosa si deve al Pulci?",["la composizione della prima biografia dantesca","la scrittura della prima opera con tema l'amore","la composizione del primo romanzo cavalleresco","la scrittura della prima raccolta di versi in volgare"],2],
+  ["029","Cosa determinò per l'Orlando innamorato l'oblio che seguì il grande successo nel '500?",["il tema trattato","la trama","il colorito linguistico","lo stile narrativo"],2],
+  ["029","Chi scrisse l'Orlando innamorato?",["Pulci","Boiardo","Ariosto","Guarini"],1],
+  ["030","Da chi provenne la più influente proposta di imitazione del Toscano nel '500?",["Ludovico Ariosto","Baldassarre Castiglione","Matteo Maria Boiardo","Pietro Bembo"],3],
+  ["030","Come definì il Trissino la propria lingua parlata e scritta?",["curiale","idioletto","volgare","classica"],0],
+  ["030","Cosa ne incoraggiò l'impiego?",["l'imposizione delle autorità","richiesta del pubblico","l'esempio di grandi letterati","la crescita del numero dei torchi da stampa"],3],
+  ["030","Quando si affermò il volgare come strumento della prosa letteraria accanto al latino?",["nel '600","nel '500","nel '400","nel'300"],1],
+  ["031","Per cosa è noto in particolar modo l'Aretino?",["per un trattato sulla poesia del '400","per le traduzioni dal latino","per i testi licenziosi","per i testi a sfondo religioso"],2],
+  ["031","Nel corso del '500 lo studio della retorica e la raccolta delle lettere degli autori cosa influenzarono?",["la ricerca della lingua perfetta","le forme della prosa volgare","la trattatistica","lo stile poetico"],1],
+  ["032","Cosa spinse alcuni autori del '500 a pubblicare a stampa le proprie opere?",["la possibilità di un maggiore guadagno","la richiesta dei mecenati","la circolazione di edizioni pirata delle stesse","un fatto di comodità"],2],
+  ["033","Chi furono coloro che vennero scelti come modelli di lingua per la prosa e per la poesia nel '500?",["Petrarca e Boccaccio","Boccaccio e Lorenzo de' Medici","Dante e Petrarca","Dante e Boccaccio"],0],
+  ["033","Quali conseguenze ebbe sugli autori la pubblicazione da parte della Chiesa dell'Index dei libri proibiti?",["cominciarono ad autocensurarsi","sfidarono l'Index","si rifiutarono di scrivere","si rifugiarono negli pseudonimi"],0],
+  ["033","Se la poesia comica si basa sulla mescolanza di registri, quale tra le seguenti può essere considerata opera di poesia comica?",["L'Orlando furioso","Il Canzoniere","Gli asolani","La Divina commedia."],3],
+  ["034","Quale fu la principale attività che accumunò gli studiosi dell'Umanesimo?",["l'approfondimento dello studio del provenzale","Il recupero di opere sconosciute della classicità greca e latina","la ricerca di nuovi stili","La traduzione in latino delle loro opere scritte in volgare"],1],
+  ["034","Chi è a individuare all'inizio del '500 i modelli di lingua per la prosa e la poesia?",["Boiardo","Castiglione","Della Casa","Bembo"],3],
+  ["034","Nella sua opera De falso credita...cosa prova l'autore Lorenzo Valla?",["che la congiura de Pazzi non era stata orchestrata da loro","che Dante non era mai esistito","che la donazione di Costantino era un falso","che il Decameron non era stato scritto dal Boccaccio"],2],
+  ["034","Cosa si leggeva principalmente nel '500?",["testi religiosi e romanzi","trattatistica","poesia","poemi cavallereschi"],0],
+  ["034","Chi era il Bembo?",["un politico romagnolo","un condottiero umbro","un patrizio veneziano","un cardinale lombardo"],2],
+  ["035","In che anno prende avvio la Riforma?",["1499","1517","1501","1601"],1],
+  ["035","Quale fu la massima risposta della Chiesa alla Riforma?",["l'appropriazione dell'ambito scolastico","Il Concilio di Trento","la creazione dell'Ordine di Gesù","l'ordinazione in un solo anno di 45 beati"],1],
+  ["035","Come fu la reazione italiana alla Riforma?",["blanda","all'insegna degli eccessi","non vi fu affatto","forte"],0],
+  ["035","Quale civiltà visse all'insegna delle contraddizioni?",["l'Umanesimo","il Rinascimento","il Medioevo","l'età classica"],1],
+  ["036","Quale fu la condizione che creò i protettori delle arti nelle corti?",["la concentrazione economica in poche mani","la passione dei principi","un manifesto degli eruditi","la volontà degli artisti a porre fine alla loro esistenza errabonda."],0],
+  ["036","La letteratura cinquecentesca con quella di quale secolo appare indissolubilmente legata?",["con quella del manierismo","con quella del secolo precedente","con quella del classicismo","con quella barocca"],1],
+  ["036","I tentativi degli intellettuali nel passato di avere un ruolo importante nella gestione della cultura del '500 che esito hanno?",["possono essere considerati come ampiamente realizzati","restano sogni non realizzati","sono in parte condotti a buon fine","non sono mai esistiti"],1],
+  ["037","Cosa annuncia Machiavelli nella lettera scritta a Francesco Vettori il 10 dicembre 1513?",["che è stato incarcerato","che ha iniziato a scrivere Il Principe","che sta per partire alla volta della Francia come ambasciatore","che ha messo mano alla composizione della Mandragola"],1],
+  ["038","In quale ambiente matura il tenore discorsivo dei I Discorsi sopra la prima Deca di Tito Livio?",["dagli Orti oricellari","dall'ambasciata della repubblica fiorentina a Parigi","dai Giardini di Boboli","dal confino di San Casciano"],0],
+  ["038","Quante novelle scrisse il Machiavelli?",["decine","nessuna","due: Belfagor arcidiavolo e La Mandragola","una in tutto: Belfagor arcidiavolo"],3],
+  ["039","Qual è l'altra grande voce del pensiero storico-politico del '500 oltre a Machiavelli?",["Castiglione","Guicciardini","Della Casa","Bembo"],1],
+  ["039","In quale momento della sua vita Guicciardini scrive la Storia d'Italia?",["al termine della sua carriera politica e diplomatica","poco prima di morire","all'inizio della sua carriera diplomatica","quando venne arrestato"],0],
+  ["041","Come definire Il libro del Cortegiano?",["come una società di corte dovrebbe comportarsi","l'arte di guerreggiar","i buoni costumi a tavola","manuale dell'arte scrittoria"],0],
+  ["041","Chi è l'autore de Il libro del Cortegiano?",["Ludovico Ariosto","Monsignor Della Casa","Pietro Bembo","Baldesar Castiglione"],3],
+  ["042","A quale corte fa riferimento il Cortegiano?",["Milano 1501","Ferrara 1504","Urbino 1507","Firenze 1510"],2],
+  ["043","Matteo Bandello a quale specifico ambito dell'arte del '500 è riconducibile?",["libri di viaggio","poetica","novellistica","trattatistica"],2],
+  ["043","In quale ambiente va collocato il Giraldi Cinzio?",["cortegiano settentrionale","papale","monastico","cortegiano dell'Italia centrale"],0],
+  ["044","Stilisticamente parlando, quale genere ben si adattava ai gusti dell'Italia comunale e signorile?",["romanzo cavalleresco","epistolario","novellistica","raccolta di versi"],2],
+  ["044","Qual era il vero nome del 'Lasca'?",["Anton Francesco Grazzini","Adalberto Maria Merli","Pietro Fortini","Marco Visconti"],0],
+  ["044","Di quale tipo di prosa egli è un esempio?",["narrativa cavalleresca","prosa narrativa cortegiana","prosa narrativa comunale","narrativa epistolografica"],2],
+  ["044","Quale celeberrima traduzione è opera di Angelo Firenzuola?",["le Metamorfosi di Ovidio","l'Asino d'oro di Apuleio","Miles gloriosus di Plauto","De bello gallico di Giulio Cesare"],1],
+  ["044","Come è possibile definire il riscontro che la novellistica italiana del '500 ottiene in Europa?",["fortunato","minimo","inesistente","scarso"],0],
+  ["044","Nelle opere di chi, tra i seguenti autori, si possono ritrovare alcuni elementi della novella cinquecentesca italiana?",["Maupassant","Shakespeare","La Fontaine","Schiller"],1],
+  ["045","La critica è abbastanza concorde nell'indicare quale opera come fondante del genere epistolare in volgare nel '500?",["Lettere dell'Aretino","Lettere di Girolamo Ruscelli","Lettere di Lodovico Dolce","Lettere di Francesco Sansovino"],0],
+  ["045","Quale tra questi non è un settore di gran rilievo della prosa artistica cinquecentesca?",["letteratura artistica","diari di viaggio","novellistica","filosofia classica"],3],
+  ["045","Chi è l'autore delle Vite de’ più eccellenti pittori, scultori e architettori?",["Antonio Pigafetta","Benvenuto Cellini","Il 'Lasca'","Giorgio Vasari"],3],
+  ["046","Presso quale corte visse l'Ariosto?",["Malatesta a Rimini","Estensi a Ferrara","Medici a Firenze","Gonzaga a Milano"],1],
+  ["046","Qual era l'ideale di vita dell'Ariosto?",["avventurosa","da girovago di corte in corte","di pura isolata contemplazione","in città, circondato dagli amici e dagli affetti"],3],
+  ["047","Con quale metro venivano composti i romanzi cavallereschi del '500?",["in distici elegiaci","in esametri","in terzine","in ottava rima"],3],
+  ["047","L'opera di chi riprende e porta a compimento l'Ariosto con l'Orlando furioso?",["Luigi Pulci","Torquato Tasso","Pietro Bembo","Matteo Maria Boiardo"],3],
+  ["047","Qual è il motivo delle tre edizioni dell'Orlando furioso?",["l'insoddisfazione dell'autore","la volontà degli editori di rinnovare l'opera","l'intervento censorio degli Estensi","la perdita delle precedenti da parte dell'autore"],0],
+  ["047","Qual è lo scopo del Furioso?",["celebrare la casa d'Este","realizzare importanti vendite di copie","dar vita a narrazioni seriali","dilettare l'ambiente di corte a Ferrara"],0],
+  ["049","In quale opera Tasso teorizza il poema epico che poi trasporrà nella Gerusalemme?",["Aminta","Discorsi","Rinaldo","Rime e prose"],1],
+  ["049","In quale periodo è collocata la Gerusalemme liberata?",["alla fine della seconda crociata","all'inizio della prima crociata","alla fine della prima crociata","all'inizio della seconda crociata"],2],
+  ["049","Dopo un primo tentativo fallito, in quali anni Tasso riprende in mano il progetto della Gerusalemme?",["1574-'75","1565-'70","1564-'65","1554-'55"],2],
+  ["049","In che anno Tasso porta a compimento la Gerusalemme?",["1560","1575","1570","1565"],1],
+  ["050","Il ridimensionamento delle signorie italiane della seconda metà del '500 quali conseguenze comporta per il letterato di corte?",["il vedere il suo ruolo ridursi","l'assistere a un incremento dell'importanza della sua figura","non comporta mutamenti","la tendenza a porsi al servizio delle potenze straniere"],0],
+  ["050","Qual è il titolo del capolavoro teatrale del Guarini?",["Calandria","Pastor fido","Aminta","Mandragola"],1],
+  ["050","Oltre agli scritti per il teatro, cos'ha prodotto Guarini?",["epistolari","trattati","liriche","novelle"],0],
+  ["052","Nel Cinquecento, oltre al canzoniere del Bembo, di quale altro autore se ne ricorda uno?",["Baldassarre Castiglione","Giovanni della Casa","Vittoria Colonna","Francesco Guicciardini"],1],
+  ["053","Quale novità si affaccia intorno al terzo decennio del XVI nella produzione lirica di indirizzo petrarchesco?",["scomparsa, o quasi, dei canzonieri di ispirazione petrarchesca","aumento esponenziale della produzione di canzonieri","pubblicazione di canzonieri composti da poetesse","ritorno alle composizioni poetiche in latino"],2],
+  ["053","Quale tra queste non fu una poetessa?",["Gaspara Stampa","Vittoria Colonna","Artemisia Gentileschi","Isabella di Morra"],2],
+  ["054","Per la lirica quale modello propugnava il Bembo?",["l'alternanza tra modello petrarchesco e l'innovazione","il modello petrarchesco svecchiato","il superamento del modello petrarchesco","il modello petrarchesco ortodosso"],3],
+  ["054","Le Rime del Tasso vennero fatte oggetto di quali particolari attenzioni?",["tutte le copie stampate vennero fatte misteriosamente sparire dal mercato","vinsero il primo premio indetto nel '500 per la poesia","Furono depredate da altri poeti minori che ne inserirono delle intere parti nei loro canzonieri","ne vennero fatte circolare numerose edizioni clandestine"],3],
+  ["054","Nei suoi numerosi componimenti poetici, quali strutture metriche impiega il Tasso?",["tutte le strutture metriche della tradizione","sestine e stanze","solo madrigali","solamente sonetti e canzoni"],0],
+  ["054","Perché, all'interno del panorama della poesia del '500, il canzoniere del Tasso merita particolare attenzione?",["per la particolare lunghezza delle liriche","soprattutto per l'innovazione apportata al genere","non merita particolare attenzione","per la particolare brevità delle liriche"],1],
+  ["055","Per quale motivo si pone all'attenzione l'opera di Celio Magno?",["per certe atmosfere che lo rendono un precursore del Barocco","Perché è l'unica di valore nel panorama lirico cinquecentesco di Venezia","perché è del periodo la più elevata nel panorama della poetica lombarda","per il recupero degli esametri appartenenti alla classicità"],0],
+  ["055","All'inizio del XVI secolo quale poeta influenza la lirica del contesto napoletano?",["Giovanni della Casa","Luigi Tansillo","Iacopo Sanazzaro","Pietro Bembo"],2],
+  ["056","Quale tra queste figure è riconducibile all'anticlassicismo?",["Francesco Berni","Cecco Angiolieri","Luigi Tansillo","Celio Magno"],0],
+  ["056","Come è stata definita la poesia di Berni?",["oscuramente elevata","impegnata nella forma e disimpegnata nel contenuto","perfetta così com'è","agile e sopraffina"],1],
+  ["056","Di quale opera il Berni portò a termine una completa riscrittura?",["Orlando innamorato","Gerusalemme liberata","Orlando furioso","Morgante"],0],
+  ["056","Cosa accadde all'opera originale riscritta da Berni?",["non le accadde nulla","venne disconosciuta dall'autore","sparì per circa tre secoli","si dotò di un altro titolo"],2],
+  ["057","Qual è la particolarità che contraddistingue l'Hypnerotomachia Poliphili?",["è composto in un misto di franco-provenzale e latino","è scritto in greco e latino","è composto in latino e italiano","è scritto in dialetto veneto"],2],
+  ["057","In quale tipo di produzione si evidenzia di più il tentativo di ribaltamento del genere classicista?",["produzione macaronica","poesia comica","poesia bernesca","scritti licenziosi"],0],
+  ["057","Cos'è il 'polifilesco'?",["traduzione dal greco al latino","composizione a più voci narranti","commistione di registri alti","un impasto linguistico"],3],
+  ["057","Chi era Teofilo Folengo?",["uno scrittore di teatro","uno scrittore di genere maccheronico","un poeta vernacolare","un poeta classicista"],1],
+  ["057","Chi scrisse l'Hypnerotomachia Poliphili?",["Pietro l'Aretino","Francesco Colonna","Francesco Berni","Teofilo Folengo"],1],
+  ["058","Come si chiama il teatro di tipi caratterizzati dal dialetto?",["Commedia dell'arte","teatro volgare","lirismo barocco","drammaturgia cinquecentesca"],0],
+  ["058","Qual è il nome del genio comico del XVI secolo?",["Folengo","Speroni","Ruzzante","Berni"],2],
+  ["058","Qual è il genere letterario che si rifà da un lato a Plauto e Terenzio, e dall'altro alla novellistica italiana?",["l'egloga","la canzone","la tragedia","il genere comico"],3],
+  ["058","Chi è l'autore della Venexiana?",["Berni","Goldoni","anonimo","Trissino"],2],
+  ["058","Chi scrisse la Sofonisba?",["Giraldi Cinzio","Dovizi da Bibbiena","Giannotti","Trissino"],3],
+  ["058","Come si può definire la poesia del Berni?",["dialettale","volgare","comica","popolare"],2],
+  ["059","In che lingua scriveva il Ruzante?",["dialetto fiorentino","dialetto veneto","un misto di volgare e latino","dialetto pavano"],3],
+  ["060","L'Aretino è un poligrafo. Ma cos'è un poligrafo?",["colui che riesce a scrivere contemporaneamente con più penne","scrittore che scrive di vari argomenti","chi riesce a scrivere con diverse calligrafie","colui che riesce a scrivere sia da sinistra a destra sia viceversa"],1],
+  ["060","Come si potrebbe definire la vena artistica de l'Aretino?",["comica e dissacrante","cupa e drammatica","classicista","aulica"],0],
+  ["060","Chi era Bernardo Dovizi, detto il Bibbiena?",["uno scrittore di satire","un poeta del '500","un uomo d'arme","un cardinale"],3],
+  ["060","Nell'attività teatrale di Ruzante e di Calmo, quale tipo di teatro viene ripreso in chiave 'rusticale'?",["quello di Plauto","quello di Terenzio","quello di Orazio","quello di Tasso"],0],
+  ["061","Qual è l'altro nome con cui è conosciuto il dramma pastorale?",["teatro bucolico","tragicommedia","drammaturgia bucolica","Arcadia"],1],
+  ["061","Quale tra questi non è un poeta del tardo cinquecento?",["Strozzi","Guarini","Tasso","Acciaiuoli"],3],
+  ["063","Di quale secolo è proprio lo stile barocco?",["XVI","XV","XVII","XVIII"],2],
+  ["064","Qual è la maggiore opera del Marino?",["Morgante","Adone","Aminta","Pastor fido"],1],
+  ["065","L'autore dell'Adone su cosa vuole che si basi la sua opera?",["sulla sfida al destino","sulla Storia","sui valori supremi","sull'amore sensuale"],3],
+  ["065","Per Marino qual è il contenuto dell'Adone?",["il concetto di felicità","la psicologia dell'amore","la sensualità","le parole"],3],
+  ["065","Quale tra i seguenti non è un marinista?",["Giuseppe Battista","Claudio Achillini","Girolamo Fontanella","Gabriello Chiabrera"],3],
+  ["066","Nel '600 cosa si rileva riguardo l'uso del latino?",["rivalutazione di questo anche al di fuori delle trattazioni scientifiche","abbandono di questo anche scrivendo di scienza","lievi mutamenti nel suo impiego rispetto al precedente secolo","il suo uso rimane immutato rispetto al secolo precedente"],1],
+  ["066","Chi tra i seguenti scienziati scrittori fece parte dell'Accademia della Crusca e di quella del Cimento?",["Francesco Redi","Federico Cesi","Galileo Galilei","Lorenzo Magalotti"],3],
+  ["066","Chi è il più importante autore della 'scrittura morale'?",["Federico Cesi","Torquato Accetto","Emanuele Tesauro","Paolo Segneri"],1],
+  ["067","Chi scrisse la Philosophia sensibus demonstrada?",["Giambattista Vico","Tommaso Campanella","Francesco Redi","Giordano Bruno"],1],
+  ["067","Cos'è La città del sole?",["un pamphlet","una raccolta di liriche","un trattato in forma di dialogo","un romanzo del '600"],2],
+  ["067","Qual è l'autore più veemente della satira politica seicentesca?",["Traiano Boccalini","Francesco Berni","Francesco Fulvio Frugoni","Alessandro Tassoni"],0],
+  ["067","La formula coniata ad hoc \"ragion di Stato\", a che cosa serve?",["a spiegare la formazione delle nazioni moderne","a giustificare il dispotismo","ad avvolgere i misteri di natura politica","a rafforzare il concetto di amore per la patria"],1],
+  ["068","Nel Seicento quale cambiamento ha luogo in ambito poetico?",["viene meno la discussione attorno alla Poetica aristotelica","si accende la discussione tra antichi e moderni","si introducono nuove forme metriche","si torna a scrivere in latino"],0],
+  ["068","Chi fu il pioniere della 'nuova' poetica?",["Matteo Peregrini","Giovanni Filippo Apolloni","Francesco Baldovini","Filippo Acciauoli"],0],
+  ["068","Il teorico della nuova poetica seicentesca chi fu?",["Matteo Peregrini","Emanuele Tesauro","Traiano Boccalini","Alessandro Algardi"],1],
+  ["068","Giovanni Botero è uno degli scienziati che si dedicano anche all'arte. Ma qual è il terreno in cui la sua ricerca si esprime di più?",["trattatistica generica","critica letteraria","storico-politico","comparazione linguistica"],2],
+  ["069","Quale rapporto sussite tra la novella del '600 e quella boccacciana?",["sono tra loro distanti","sono identiche","sono estremamente simili","sono tra loro leggermente differenti"],0],
+  ["069","Come si intitola il capolavoro della letteratura favolistica del '600?",["Le piacevoli e ridicolose semplicità di Bertoldino","Le sottilissime astuzie di Bertoldo","Il Cunto de li cunti","La gatta cenerentola"],2],
+  ["070","Quali sono i due gruppi dominanti nel genere romanzo?",["comico-satirico, guerresco-d'amore","guerresco-d'amore, eroico-galante","eroico-galante, eroico-religioso","eroico-galante, comico-satirico"],2],
+  ["070","Nel '600, come pure nel secolo successivo, il romanzo…",["è riservato ai poeti di scarso successo","rimane ancora in condizione subordinata rispetto alla poesia","continua a essere considerato un genere minore","acquisisce la fisionomia di un genere a sé stante"],3],
+  ["070","Da chi è costituito in primis il pubblico italiano dei romanzi seicenteschi?",["dagli studiosi","dall'emergente classe borghese","dall'aristocrazia","dal popolo che ora conta molti più alfabetizzati"],2],
+  ["072","Qual era lo scopo principale dell'Arcadia?",["il giusto equilibro tra classicismo e innovazione","l'innovazione","il ritorno alla semplicità e al buon gusto dei classici","la ricerca di qualcosa di non ancora ben definito"],2],
+  ["073","Cosa accade nel teatro dalla metà del '600?",["quel poco di autonomia acquisita in precedenza viene perduta dagli attori","non esistono più compagnie di attori","le compagnie di attori assumono una sempre più chiara identità","sono ora gli attori a dettare le regole nelle corti"],2],
+  ["073","Come fu in quel periodo l'atteggiamento della Chiesa verso il teatro?",["flebilmente negativo","nettamente avverso","ambivalente","positivo"],2],
+  ["073","Qual era la specialità di Enrico Della Valle?",["il teatro satirico","la commedia di corte","la commedia","la tragicommedia"],3],
+  ["074","Quale opera inaugura il melodramma in Italia?",["Pastor Fido","Il Pomo d'oro","Il Giasone","Il ritorno di Ulisse"],0],
+  ["074","A cosa corrisponde il \"recitar cantando\"?",["a una separazione di ruoli tra attori e cantanti","a una settore di esclusiva pertinenza delle voci bianche","all'emulazione del teatro greco","a una tecnica nuova"],2],
+  ["074","Oltre a Monteverdi chi fu tra i seguenti un altro importante riformatore del linguaggio musicale?",["Gesualdo","Caccini","Rinuccini","Peri"],0],
+  ["075","Chi riformò il teatro musicale insieme a Metastasio?",["Chiabrera","Monteverdi","Goldoni","Apostolo Zeno"],3],
+  ["075","Alla base dell'ideale di Metastasio cosa c'è?",["piacere e meraviglia","suggestione","illusione","realismo"],0],
+  ["075","Come si intitola il primo melodramma di Metastasio?",["Didone abbandonata","Artaserse","Semiramide riconosciuta","Catone in Utica"],0],
+  ["075","Qual era il vero nome di Mestastasio?",["Niccolò Porpora","Carlo Lorenzini","Pietro Trapassi","Pietro Gravina"],2],
+  ["076","Quali furono i soggetti della meditazione goldoniana?",["il Mondo e il Teatro","la donna e Venezia","il Mondo e Venezia","il Teatro e Venezia"],0],
+  ["076","Cosa vuole modificare Goldoni della comicità a teatro?",["vuole accrescere il numero dei frizzi e dei lazzi","vuole cristallizzare la funzione delle maschere","vuole restituire decoro alla comicità","vuole dare libero sfogo alle battute volgari"],2],
+  ["077","Con quale commedia Goldoni affronta il mondo popolare?",["La trilogia della villeggiatura","Le baruffe chiozzotte","Sior Todero brontolon","I Rusteghi"],1],
+  ["077","Chi tra i seguenti polemizzerà con Goldoni e col suo teatro?",["Medebac","Gozzi","Vendramin","Florio"],1],
+  ["078","Chi scrisse i Rerum italicarum scriptores?",["Muratori","Baretti","Filangieri","Pietro Verri"],0],
+  ["078","La dominazione straniera cosa comportò in chiave illuministica per l'Italia?",["una visione distorta delle idee illuministe","nulla","un netto ritardo nell'arrivo di quelle idee in Italia","favorì il contatto con l'estero e l'arrivo di nuove idee"],3],
+  ["078","Nei Rerum italicarum scriptores cos'è possibile scorgere?",["l'ideale dell'autore in tema storico","l'influenza della storiografia europea","un residuo di storiografia medievale","l'inizio della storiografia italiana moderna"],3],
+  ["079","Nel ricostruire la storia universale da cosa parte Vico?",["dalla distinzione tra \"causa\" ed \"effetto\"","dalla distinzione tra \"certo\" e \"vero\"","dalla distinzione tra \"vero\" e \"falso\"","dalla distinzione tra \"colpa\" e \"ragione\""],1],
+  ["079","Chi era Pietro Giannone?",["un poeta barocco","un eminente storico","un uomo del teatro del '700","un filosofo del '600"],1],
+  ["080","In estrema sintesi, l'Illuminismo…",["vuole illuminare il mondo con la ragione","vuole cristallizzare le posizioni sociali","vuole tornare alla purezza dell'epoca classica","intende accrescere in maniera esponenziale l'illuminazione pubblica"],0],
+  ["081","Quale tra questi fu un eminente critico del XVIII secolo?",["Imbonati","Baretti","Algarotti","Frugoni"],1],
+  ["081","Quale tra le seguenti affermazioni è corretta?",["l'illuminismo fu un movimento di rinnovazione","l'illuminismo non combatté contro il dogmatismo","l'illuminismo volle fare riferimento alla tradizione classica","l'illuminismo determinò una continuità con i residui feudali"],0],
+  ["081","La Storia di Milano di Pietro Verri per quale altro libro sarà fonte?",["I promessi sposi","Il Giorno","Dei delitti e delle pene","Saul"],0],
+  ["081","Oltre che al Caffè, l'illuminismo milanese dove era solito ritrovarsi?",["Accademia della Crusca","Accademia dei Trasformati","Accademia dei Pugni","Accademia dell'Arcadia"],2],
+  ["082","L'ideale di società pensato da Parini, con quale altro ideale societario era in linea?",["con quello neoclassico","con quello arcadico","con quello preromantico","con quello illuminista"],3],
+  ["082","Il Parini, intellettuale isolato, grazie a cosa potrà fare il suo ingresso nella società milanese?",["al suo essere sacerdote","alla pubblicazione di una raccolta di versi","a una raccomandazione di Pietro Verri","dietro esborso di una certa somma"],1],
+  ["082","In base alla poetica e alle scelte stilistiche, come possiamo considerare Parini?",["in parte classicista e in parte moderatamente illuminista","prossimo al movimento arcadico","assolutamente neoclassico","completamente indirizzato verso l'illuminismo"],0],
+  ["083","A chi è rivolta la critica sociale di Parini?",["alla nobiltà in genere","ai nobili parassiti che disprezzano il popolo","a quella parte del popolo che non si ribella","al popolo sporco e molesto"],1],
+  ["084","Chi fu l'altro scrittore, oltre al già citato Parini, che il Risorgimento ammirò?",["Baretti","Alfieri","Manzoni","Foscolo"],1],
+  ["084","Lo scrittore che rappresenta la risposta corretta al quesito di cui sopra, per cosa è maggiormente conosciuto?",["per le sue poesie","per i suoi saggi","per i suoi romanzi","per le sue tragedie"],3],
+  ["085","Che genere di rapporto lega il neoclassicismo al preromanticismo?",["un rapporto superficiale","un apparente legame","totale estraneità","un rapporto fatto di aspetti inestricabilmente legati tra loro"],3],
+  ["085","Tra le seguenti, quale personalità di artista può essere presa di esempio per il rapporto di cui sopra?",["Parini","Alfieri","Pindemonte","Manzoni"],2],
+  ["085","Quali cambiamenti apporta allo scritto autobiografico il muoversi tra neoclassicismo e preromanticismo?",["nessun cambiamento","si diffonde l'abitudine a scavare nelle proprie emozioni","lievissimi mutamenti, quasi impercettibili","si tende a creare dei falsi sé cui affidare confidenze"],1],
+  ["085","Che rapporto c'è tra la poetica del neoclassicismo e quella barocca?",["una cospicua eredità tematica e stilistica","la poetica neoclassicistica apprezza quella barocca, ma guarda avanti e non la utilizza.","alcuni elementi barocchi finiscono nella poetica neoclassica","la prima rifiuta la seconda"],3],
+  ["085","Se è possibile affermare che neoclassicismo e preromanticismo hanno una radice comune, quale sarebbe questa?",["entrambi vengono generati a seguito di fasi critiche della storia","non è possibile fare una simile affermazione","condivisero gli stessi fautori","entrambi celebrano successi di natura sociale"],0],
+  ["086","Come si intitola l'opera di gran successo scritta da Vincenzo Monti?",["Per la liberazione dell'Italia","In morte di Ugo Bassville","Al signor di Montgolfier","Galeotto Manfredi"],1],
+  ["086","Qual è il ruolo svolto dal mito nella poesia del 7-800?",["un ruolo di scarsa importanza","un ruolo meramente accessorio","nessun ruolo svolto","un ruolo di tutto rilievo"],3],
+  ["086","Cos'è che a Monti è stato sempre rimproverato?",["l'aver fatto della coerenza un credo","di essere un voltagabbana","di non essere disposto a mutare idea","l'eccessivo rigore nelle scelte"],1],
+  ["087","Qual è il compito che Foscolo attribuisce alla poesia?",["celebrare storie memorabili","porre in luce le vite degli anonimi","nessuno scopo in particolare","puro diletto"],0],
+  ["087","Cos'è per Foscolo il mito?",["solo un collegamento col mondo del passato","storie per bambini","un modo di esistere della sua riflessione","un modo di mistificare la realtà"],2],
+  ["089","Per quale motivo i fautori del Risorgimento ritennero Leopardi uno di loro?",["per via di un equivoco","ciò non corrisponde a verità","per la denuncia leopardiana del dispotismo napoleonico e per due canzoni dedicate ai problemi nazionali","perché lo stesso Leopardi dichiarò pubblicamente le sue simpatie al Risorgimento"],2],
+  ["089","Per Leopardi con cosa ci si deve confrontare per considerare la possibilità, o meno, della felicità?",["la Fede","la Natura","la ricchezza","l'intelligenza"],1],
+  ["089","Da cosa muove il pensiero leopardiano per condurlo al pessimismo?",["dalla condizione comune a tutti gli esseri umani","dalla realtà politica italiana del suo tempo","dalla vita che conduceva a Recanati","dagli iniziali insuccessi letterari."],0],
+  ["089","Che cosa sono le Operette morali?",["una raccolta di liriche","un saggio sul teatro","un insieme di commedie","una raccolta di prose"],3],
+  ["089","Il passaggio leopardiano dal \"pessimismo storico\" a quello \"cosmico\" corrisponde al transito dal…",["\"giusto\" all'\"ingiusto\"","\"bello\" al \"vero\"","\"giusto\" all'\"ingiusto\"","\"sogno\" alla \"realtà\""],1],
+  ["089","A quale fase pessimistica corrisponde l'idea di leopardi di Natura benigna e di ragione corruttrice?",["pessimismo cosmico","pessimismo storico","pessimismo eroico","pessimismo individuale"],1],
+  ["089","Quale fu l'educazione base di Leopardi?",["quella del cursus studiorum dei Gesuiti","quella dei padri somaschi","quella dei salesiani di Recanati","quella dei benedettini"],0],
+  ["090","I Grandi idilli a quale fase della tradizionale ripartizione del pessimismo leopardiano corrispondono?",["a nessuno","pessimismo cosmico","pessimismo eroico","pessimismo storico"],1],
+  ["090","In quale opera è possibile rintracciare le varie fasi del pensiero leopardiano?",["Canti","Canzoni","Operette morali","Zibaldone"],3],
+  ["090","Quale tra queste liriche non fa parte dei Grandi idilli?",["A Silvia","Il sabato del villaggio","Le ricordanze","L'infinito"],3],
+  ["094","Come è possibile definire la posizione di Manzoni in ambito politico e sociale?",["illuminata","illuminata e conservatrice a un tempo","conservatrice","liberale"],1],
+  ["094","Secondo Manzoni la letteratura a cosa doveva ispirarsi?",["agli studi sociologici","alla dottrina della Chiesa","alla Natura","alla realtà dei fatti"],1],
+  ["094","Quale fu per Manzoni l'altra fonte presente nella realtà in grado di competere con la \"Bellezza\"?",["la verità","la bontà","la bontà","la Storia"],3],
+  ["094","Quanti dei 12 \"Inni sacri\" previsti Manzoni portò a termine?",["cinque","quattro","otto","sei"],0],
+  ["094","Dal punto di vista letterario il soggiorno di Manzoni a Parigi quale mutamento introdusse?",["l'adozione dell'italiano parlato a Firenze","il distacco dalla poesia","il passaggio al romanzo storico","l'abbandono del neoclassicismo"],3],
+  ["094","Grazie a chi Manzoni affinò i suoi interessi storici?",["Carlo Imbonati","Ugo Foscolo","Vincenzo Cuomo","Vincenzo Monti"],2],
+  ["095","Perché il romanzo di Manzoni rappresenta una svolta?",["per l'uso di una lingua particolare","per l'ambientazione","per i colpi di scena presenti nella trama","per i personaggi, per la prima volta di bassa condizione"],3],
+  ["095","Nei Promessi sposi Manzoni opera una veemente critica ...",["al suo secolo","all'Italia","al secolo precedente","al '600"],3],
+  ["095","Nel passaggio dal Fermo e Lucia a I promessi sposi Manzoni compie qualcosa di rivoluzionario che riguarda...",["la trama","lo stile","le tematiche","il linguaggio"],3],
+  ["096","Quale tra le seguenti figure di intellettuali si espresse in maniera critica riguardo i Promessi sposi?",["Carlo Emilio Gadda","Francesco De Sanctis","Giosuè Carducci","Giovanni Verga"],2]
+];
+const QUESTIONS = RAW.map((r, i) => ({ id: i, lezione: r[0], q: r[1], options: r[2], correct: r[3] }));
+const STORAGE_KEY = "quiz-letteratura-italiana-state-v1";
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (Array.isArray(s.queue) && s.queue.length > 0) return s;
+    return null;
+  } catch {
+    return null;
+  }
+}
+function saveState() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      queue: state.queue,
+      pos: state.pos,
+      correctCount: state.correctCount,
+      attempted: state.attempted,
+      wrongIds: Array.from(state.wrongIds),
+      finished: state.finished,
+    }));
+  } catch {
+    // storage non disponibile (es. modalità privata): si prosegue solo in memoria
+  }
+}
+const saved = loadState();
+const state = saved ? {
+  queue: saved.queue,
+  pos: saved.pos || 0,
+  correctCount: saved.correctCount || 0,
+  attempted: saved.attempted || 0,
+  wrongIds: new Set(saved.wrongIds || []),
+  finished: !!saved.finished,
+} : {
+  queue: shuffle(QUESTIONS.map(q => q.id)),
+  pos: 0,
+  correctCount: 0,
+  attempted: 0,
+  wrongIds: new Set(),
+  finished: false,
+};
+let selected = null;
+let revealed = false;
+const app = document.getElementById("app");
+const total = QUESTIONS.length;
+function render() {
+  const current = QUESTIONS[state.queue[state.pos]];
+  const roundLabel = state.queue.length === total ? "primo giro" : `ripasso — ${state.queue.length} in coda`;
+  let body;
+  if (state.finished) {
+    body = `
+      <div class="center">
+        <div class="label">Set esaurito</div>
+        <div class="big">${total} domande superate — ${state.attempted} tentativi totali</div>
+        <button class="btn" id="restart-btn">Ricomincia</button>
+      </div>`;
+  } else if (current) {
+    const optsHtml = current.options.map((opt, idx) => {
+      let cls = "opt";
+      let glyph = "\u2610";
+      if (revealed) {
+        if (idx === current.correct) { cls += " correct"; glyph = "\u2611"; }
+        else if (idx === selected) { cls += " wrong"; glyph = "\u2612"; }
+      }
+      return `<button class="${cls}" data-idx="${idx}" ${revealed ? "disabled" : ""}>
+        <span class="glyph">${glyph}</span><span>${opt}</span>
+      </button>`;
+    }).join("");
+    const footer = revealed ? `
+      <div class="footer-row">
+        <span class="status ${selected === current.correct ? "ok" : "bad"}">
+          ${selected === current.correct ? "Corretto" : "Errata — riproposta più avanti"}
+        </span>
+        <button class="btn" id="next-btn">Avanti →</button>
+      </div>` : "";
+    body = `
+      <div class="qmeta">Lezione ${current.lezione} — domanda ${state.pos + 1} di ${state.queue.length}</div>
+      <div class="qtext">${current.q}</div>
+      <div class="options">${optsHtml}</div>
+      ${footer}`;
+  }
+  app.innerHTML = `
+    <header>
+      <div>
+        <div class="eyebrow">Paniere · Letteratura italiana</div>
+        <h1>Di Veroli — quiz di ripasso</h1>
+      </div>
+      <div class="meta mono">${state.correctCount}/${state.attempted} corrette<br>${roundLabel}</div>
+    </header>
+    ${body}
+  `;
+  if (!state.finished) {
+    app.querySelectorAll(".opt").forEach(btn => {
+      btn.addEventListener("click", () => choose(parseInt(btn.dataset.idx, 10)));
+    });
+    const nextBtn = document.getElementById("next-btn");
+    if (nextBtn) nextBtn.addEventListener("click", next);
+  } else {
+    const restartBtn = document.getElementById("restart-btn");
+    if (restartBtn) restartBtn.addEventListener("click", restart);
+  }
+}
+function choose(idx) {
+  if (revealed) return;
+  selected = idx;
+  revealed = true;
+  state.attempted += 1;
+  const current = QUESTIONS[state.queue[state.pos]];
+  if (idx === current.correct) {
+    state.correctCount += 1;
+  } else {
+    state.wrongIds.add(current.id);
+  }
+  saveState();
+  render();
+}
+function next() {
+  selected = null;
+  revealed = false;
+  const isLast = state.pos + 1 >= state.queue.length;
+  if (!isLast) {
+    state.pos += 1;
+  } else if (state.wrongIds.size > 0) {
+    state.queue = shuffle(Array.from(state.wrongIds));
+    state.wrongIds = new Set();
+    state.pos = 0;
+  } else {
+    state.finished = true;
+  }
+  saveState();
+  render();
+}
+function restart() {
+  state.queue = shuffle(QUESTIONS.map(q => q.id));
+  state.pos = 0;
+  state.correctCount = 0;
+  state.attempted = 0;
+  state.wrongIds = new Set();
+  state.finished = false;
+  selected = null;
+  revealed = false;
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  render();
+}
+render();
+</script>
+</body>
+</html>
